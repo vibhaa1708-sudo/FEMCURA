@@ -91,9 +91,15 @@ function App() {
     <div className={`app ${dark ? "dark" : "light"}`}>
       <aside className={`sidebar ${menuOpen ? "show" : ""}`}>
         <div className="brand">
-          <div className="brand-icon"><Activity size={25} /></div>
+          
+<div className="brand-icon">
+  <div className="brand-icon-glow" />
+  <Activity size={25} strokeWidth={2.1} />
+  <span className="brand-icon-spark">✦</span>
+</div>
+
           <div>
-            <h2>ovarylysis<span>.</span></h2>
+            <h2>FEMCURA<span>.</span></h2>
             <p>WOMEN'S HEALTH INTELLIGENCE</p>
           </div>
           <button className="close-menu" onClick={() => setMenuOpen(false)}>
@@ -374,7 +380,7 @@ function App() {
                 <div className="library-hero-icon"><BookOpen size={34} /></div>
                 <div><h2>Your evidence collection starts here.</h2><p>Analyse a paper in Research Lab, then use its findings to build a structured evidence library.</p><button className="primary-button" onClick={() => goTo("Research Lab")}>Add a research paper <ArrowRight size={17} /></button></div>
               </div>
-              <div className="section-heading"><div><h2>Research principles</h2><p>How OVARYLYSIS treats scientific evidence.</p></div></div>
+              <div className="section-heading"><div><h2>Research principles</h2><p>How FEMCURA treats scientific evidence.</p></div></div>
               <div className="disease-grid">
                 <article className="disease-card"><span className="disease-icon lilac"><FileSearch size={23} /></span><h3>Traceable findings</h3><p>Link conclusions to source text and page references whenever available.</p></article>
                 <article className="disease-card"><span className="disease-icon mint"><ShieldCheck size={23} /></span><h3>Honest uncertainty</h3><p>Distinguish not reported from evidence that a factor was excluded.</p></article>
@@ -384,7 +390,7 @@ function App() {
           )}
 
           <footer className="footer">
-            <span>OVARYLYSIS <span className="footer-dot">✳</span> Evidence-led women's health</span>
+            <span>FEMCURA <span className="footer-dot">✳</span> Evidence-led women's health</span>
             <span>Educational research prototype · Not a medical diagnosis</span>
           </footer>
         </section>
