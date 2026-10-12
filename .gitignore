@@ -39,3 +39,12 @@ __pycache__/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
+# FEMCURA research source PDFs
+ml/data/research_papers/
+
+# Intermediate and backup datasets
+ml/data/passages_for_ml_review_backup.csv
+ml/data/passages_for_review.csv
+ml/data/passages_for_review_two_labels.csv
+ml/data/passages_pending_review.csv
+ml/data/passages_to_label.csv
