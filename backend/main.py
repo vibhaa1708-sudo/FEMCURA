@@ -237,3 +237,112 @@ def predict_passage(request: PassageRequest):
             status_code=500,
             detail="Could not generate predictions for this passage.",
         )
+# --------------------------------------------------
+# RESEARCH GAP INSIGHTS ROUTE
+# --------------------------------------------------
+
+class ResearchGapRequest(BaseModel):
+    passages: list[str] = Field(
+        ...,
+        min_length=1,
+        max_length=200,
+        description="Extracted passages from a research paper",
+    )
+
+
+@app.post("/research-gap-insights")
+def research_gap_insights(request: ResearchGapRequest):
+    cleaned_passages = [
+        passage.strip()
+        for passage in request.passages
+        if passage and passage.strip()
+    ]
+
+    if not cleaned_passages:
+        raise HTTPException(
+            status_code=400,
+            detail="Please provide at least one non-empty passage.",
+        )
+
+    if policy_model is None or study_model is None:
+        raise HTTPException(
+            status_code=503,
+            detail="ML models are unavailable. Check ml/models/.",
+        )
+
+    try:
+        policy_predictions = policy_model.predict(cleaned_passages)
+        study_predictions = study_model.predict(cleaned_passages)
+
+        evidence = []
+
+        for index, passage in enumerate(cleaned_passages):
+            policy_label = str(policy_predictions[index])
+            study_label = str(study_predictions[index])
+
+            if policy_label == "yes" and study_label == "no":
+                category = "Potential Evidence Gap"
+                explanation = (
+                    "This passage may discuss research inclusion "
+                    "without clearly reporting the current paper's "
+                    "own study evidence. Review the original context."
+                )
+
+            elif policy_label == "yes" and study_label == "yes":
+                category = "Inclusion and Study Evidence"
+                explanation = (
+                    "This passage may discuss research inclusion "
+                    "and report the current paper's own study evidence."
+                )
+
+            elif policy_label == "no" and study_label == "yes":
+                category = "Study Evidence Found"
+                explanation = (
+                    "This passage may report the current paper's own "
+                    "study evidence without explicitly discussing "
+                    "research inclusion."
+                )
+
+            else:
+                category = "Needs Manual Review"
+                explanation = (
+                    "The model did not identify a clear inclusion "
+                    "and study-evidence pattern. Human review is needed."
+                )
+
+            evidence.append({
+                "passage_number": index + 1,
+                "category": category,
+                "policy_prediction": policy_label,
+                "study_prediction": study_label,
+                "explanation": explanation,
+                "original_passage": passage,
+            })
+
+        category_counts = {}
+
+        for item in evidence:
+            category = item["category"]
+            category_counts[category] = (
+                category_counts.get(category, 0) + 1
+            )
+
+        return {
+            "total_passages_reviewed": len(evidence),
+            "category_counts": category_counts,
+            "evidence": evidence,
+            "notice": (
+                "These are exploratory AI-generated indicators, "
+                "not confirmed scientific research gaps. Model "
+                "predictions may be incorrect. Review original "
+                "papers and consult qualified researchers before "
+                "drawing conclusions."
+            ),
+        }
+
+    except Exception as error:
+        print(f"Research gap analysis error: {error}")
+        raise HTTPException(
+            status_code=500,
+            detail="Could not generate research gap insights.",
+        )
