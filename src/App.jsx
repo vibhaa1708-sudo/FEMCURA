@@ -57,6 +57,59 @@ const navItems = [
   { name: "Evidence Library", icon: BookOpen }
 ];
 
+function formatLabel(value) {
+  if (typeof value !== "string" || !value.trim()) return "Unavailable";
+
+  return value.charAt(0).toUpperCase() + value.slice(1);
+}
+
+function formatScore(value) {
+  return Number.isFinite(value)
+    ? `${(value * 100).toFixed(1)}%`
+    : "Unavailable";
+}
+
+function PredictionCard({ title, description, prediction, score, icon: Icon, variant }) {
+  return (
+    <div className={`prediction-card ${variant}`}>
+      <div className="prediction-heading">
+        <span className="prediction-icon">
+          <Icon size={19} />
+        </span>
+        <span>{title}</span>
+      </div>
+
+      <strong className="prediction-value">
+        {formatLabel(prediction)}
+      </strong>
+
+      <p>{description}</p>
+
+      <div className="score-row">
+        <span>Model score</span>
+        <strong>{formatScore(score)}</strong>
+      </div>
+
+      <div
+        className="score-track"
+        role="img"
+        aria-label={`Model score: ${formatScore(score)}`}
+      >
+        <div
+          className="score-fill"
+          style={{
+            width: `${
+              Number.isFinite(score)
+                ? Math.max(0, Math.min(100, score * 100))
+                : 0
+            }%`
+          }}
+        />
+      </div>
+    </div>
+  );
+}
+
 function App() {
   const [dark, setDark] = useState(false);
   const [active, setActive] = useState("Overview");
@@ -125,7 +178,6 @@ function App() {
     setAnalysisResult(null);
 
     try {
-      // Step 1: Extract text from the uploaded PDF.
       const formData = new FormData();
       formData.append("file", file);
 
@@ -145,15 +197,13 @@ function App() {
         );
       }
 
-      // Step 2: Run experimental ML predictions page by page.
-      const readablePages = extractionData.pages.filter(
+      const readablePages = (extractionData.pages || []).filter(
         (page) => page.text && page.text.trim()
       );
 
       const results = [];
 
       for (const page of readablePages) {
-        // The model endpoint accepts a maximum of 20,000 characters.
         const pageText = page.text.trim().slice(0, 20000);
 
         const predictionResponse = await fetch(
@@ -164,9 +214,7 @@ function App() {
               "Content-Type": "application/json",
               Accept: "application/json"
             },
-            body: JSON.stringify({
-              text: pageText
-            })
+            body: JSON.stringify({ text: pageText })
           }
         );
 
@@ -195,7 +243,7 @@ function App() {
     } catch (error) {
       setAnalysisError(
         error.message ||
-        "Could not connect to the FEMCURA backend. Check that the server is running."
+        "Could not connect to FEMCURA. Check that the backend is running."
       );
     } finally {
       setAnalyzing(false);
@@ -261,7 +309,7 @@ function App() {
         </div>
 
         <div className="profile">
-          <div className="avatar">O</div>
+          <div className="avatar">F</div>
           <div className="profile-info">
             <strong>Research Workspace</strong>
             <span>Health research prototype</span>
@@ -309,7 +357,7 @@ function App() {
               <Bell size={19} />
             </button>
 
-            <div className="top-avatar">O</div>
+            <div className="top-avatar">F</div>
           </div>
         </header>
 
@@ -512,9 +560,7 @@ function App() {
                 <div className="eyebrow">
                   <BrainCircuit size={15} /> MODEL EXPLORER
                 </div>
-                <h1>
-                  Disease <span>intelligence.</span>
-                </h1>
+                <h1>Disease <span>intelligence.</span></h1>
                 <p>
                   Explore research areas and the current status of each ML
                   prototype.
@@ -587,9 +633,7 @@ function App() {
                 <div className="eyebrow">
                   <Sparkles size={15} /> AI-ASSISTED PAPER REVIEW
                 </div>
-                <h1>
-                  Research <span>Lab.</span>
-                </h1>
+                <h1>Research <span>Lab.</span></h1>
                 <p>
                   Upload a medical research paper to extract text and run
                   experimental research-reporting classifications.
@@ -738,7 +782,11 @@ function App() {
                 <section className="analysis-results">
                   <div className="section-heading">
                     <div>
-                      <h2>Analysis results</h2>
+                      <div className="eyebrow">
+                        <ChartNoAxesCombined size={15} />
+                        PAPER ANALYSIS
+                      </div>
+                      <h2>Research review results</h2>
                       <p>
                         {analysisResult.filename} · {analysisResult.totalPages}{" "}
                         total pages
@@ -748,39 +796,54 @@ function App() {
 
                   <div className="metric-grid">
                     <div className="metric-card">
+                      <span className="metric-icon lilac">
+                        <FileText size={20} />
+                      </span>
                       <span className="metric-label">Total PDF pages</span>
                       <strong>{analysisResult.totalPages}</strong>
                     </div>
 
                     <div className="metric-card">
+                      <span className="metric-icon mint">
+                        <FileSearch size={20} />
+                      </span>
                       <span className="metric-label">Extracted characters</span>
                       <strong>
-                        {analysisResult.extractedCharacters.toLocaleString()}
+                        {(analysisResult.extractedCharacters || 0).toLocaleString()}
                       </strong>
                     </div>
 
                     <div className="metric-card">
+                      <span className="metric-icon peach">
+                        <CheckCircle2 size={20} />
+                      </span>
                       <span className="metric-label">Pages classified</span>
                       <strong>{analysisResult.results.length}</strong>
                     </div>
                   </div>
 
-                  <div className="notice-banner">
+                  <div className="notice-banner analysis-notice">
                     <CircleAlert size={21} />
                     <div>
                       <strong>Experimental model output — review required</strong>
                       <p>
-                        Predictions are based on AI-assisted draft labels and
-                        are not independently validated scientific conclusions.
-                        A model score is not a calibrated probability.
-                        Do not use these outputs for clinical decisions or as
-                        definitive evidence about the paper.
+                        These predictions use AI-assisted draft labels and
+                        have not been independently validated as scientific
+                        ground truth. Model scores are not calibrated
+                        probabilities, and a prediction does not establish
+                        whether a study included or excluded a population.
+                        Review the source text and surrounding context before
+                        drawing conclusions. Do not use these outputs for
+                        clinical decisions.
                       </p>
                     </div>
                   </div>
 
                   {analysisResult.results.length === 0 && (
-                    <div className="panel">
+                    <div className="panel empty-results">
+                      <div className="empty-results-icon">
+                        <FileSearch size={26} />
+                      </div>
                       <h3>No readable page text found</h3>
                       <p>
                         The PDF may be scanned or image-based. OCR support is
@@ -789,54 +852,88 @@ function App() {
                     </div>
                   )}
 
-                  {analysisResult.results.map((result) => (
-                    <article className="panel" key={result.page}>
-                      <div className="panel-heading">
-                        <div>
-                          <h2>Page {result.page}</h2>
-                          <p>Experimental classification</p>
-                        </div>
-                        <div className="panel-badge">
-                          <FileSearch size={19} />
-                        </div>
-                      </div>
+                  <div className="results-list">
+                    {analysisResult.results.map((result) => {
+                      const policy = result.policy_discussion;
+                      const study = result.study_reporting;
 
-                      <div className="model-detail">
-                        <span>Policy discussion prediction</span>
-                        <strong>
-                          {result.policy_discussion.prediction}
-                        </strong>
-                      </div>
+                      return (
+                        <article
+                          className="panel result-card"
+                          key={result.page}
+                        >
+                          <div className="result-card-header">
+                            <div className="result-page-icon">
+                              <FileSearch size={22} />
+                            </div>
 
-                      <p className="muted-note">
-                        Model score:{" "}
-                        {(
-                          result.policy_discussion.model_score * 100
-                        ).toFixed(1)}
-                        %
-                      </p>
+                            <div className="result-page-title">
+                              <span className="result-kicker">PAGE REVIEW</span>
+                              <h3>Page {result.page}</h3>
+                              <p>Experimental passage classification</p>
+                            </div>
 
-                      <div className="model-detail">
-                        <span>Study reporting prediction</span>
-                        <strong>
-                          {result.study_reporting.prediction}
-                        </strong>
-                      </div>
+                            <span className="result-review-tag">
+                              <CircleAlert size={14} />
+                              Review required
+                            </span>
+                          </div>
 
-                      <p className="muted-note">
-                        Model score:{" "}
-                        {(
-                          result.study_reporting.model_score * 100
-                        ).toFixed(1)}
-                        %
-                      </p>
+                          <div className="prediction-grid">
+                            <PredictionCard
+                              title="Policy discussion"
+                              description="Whether the passage discusses inclusion, representation or research guidance."
+                              prediction={policy?.prediction}
+                              score={policy?.model_score}
+                              icon={Users}
+                              variant="policy-card"
+                            />
 
-                      <details>
-                        <summary>View extracted page text</summary>
-                        <p className="extracted-page-text">{result.text}</p>
-                      </details>
-                    </article>
-                  ))}
+                            <PredictionCard
+                              title="Study reporting"
+                              description="Whether the passage reports this paper's own participants, methods, data or results."
+                              prediction={study?.prediction}
+                              score={study?.model_score}
+                              icon={Microscope}
+                              variant="study-card"
+                            />
+                          </div>
+
+                          <div className="research-insight">
+                            <span className="insight-icon">
+                              <Sparkles size={18} />
+                            </span>
+
+                            <div>
+                              <strong>How to interpret this page</strong>
+                              <p>
+                                These are model-generated labels, not verified
+                                findings. Read the extracted passage below and
+                                check the surrounding context before deciding
+                                whether it supports either classification.
+                                A “no” prediction does not prove that a topic
+                                is absent from the full paper.
+                              </p>
+                            </div>
+                          </div>
+
+                          <details className="source-details">
+                            <summary>
+                              <FileText size={17} />
+                              Inspect source text
+                              <span>Page {result.page}</span>
+                            </summary>
+
+                            <div className="source-text-wrap">
+                              <p className="extracted-page-text">
+                                {result.text}
+                              </p>
+                            </div>
+                          </details>
+                        </article>
+                      );
+                    })}
+                  </div>
                 </section>
               )}
             </div>
@@ -848,9 +945,7 @@ function App() {
                 <div className="eyebrow">
                   <HeartPulse size={15} /> PERSONAL HEALTH NOTES
                 </div>
-                <h1>
-                  Symptom <span>Journal.</span>
-                </h1>
+                <h1>Symptom <span>Journal.</span></h1>
                 <p>
                   Keep a private-to-this-session log of observations to discuss
                   with a qualified clinician.
@@ -928,9 +1023,7 @@ function App() {
                 <div className="eyebrow">
                   <BookOpen size={15} /> RESEARCH KNOWLEDGE
                 </div>
-                <h1>
-                  Evidence <span>Library.</span>
-                </h1>
+                <h1>Evidence <span>Library.</span></h1>
                 <p>
                   Build a collection of papers and resources that can be
                   checked and compared.
